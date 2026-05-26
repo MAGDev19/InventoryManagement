@@ -21,6 +21,9 @@ namespace InventoryManagement.WebAPI.Controllers
         protected readonly IEncryptionService _encrytpionService;
         protected readonly ITokenService _tokenService;
         protected readonly IGenericoService _GenericoService;
+        protected readonly IProductService _ProductService;
+        protected readonly ICategoryService _CategoryService;
+        protected readonly IStateService _StateService;
 
         public BaseController(IServiceProvider serviceProvider, IOptions<SectionConfiguration> configuration)
         {
@@ -29,6 +32,9 @@ namespace InventoryManagement.WebAPI.Controllers
             _tokenService = serviceProvider.GetService(typeof(ITokenService)) as ITokenService;
             _GenericoService = serviceProvider.GetService(typeof(IGenericoService)) as IGenericoService;
             _encrytpionService = serviceProvider.GetService(typeof(IEncryptionService)) as IEncryptionService;
+            _ProductService = serviceProvider.GetService(typeof(IProductService)) as IProductService;
+            _CategoryService = serviceProvider.GetService(typeof(ICategoryService)) as ICategoryService;
+            _StateService = serviceProvider.GetService(typeof(IStateService)) as IStateService;
         }
 
         #region Validaciones
