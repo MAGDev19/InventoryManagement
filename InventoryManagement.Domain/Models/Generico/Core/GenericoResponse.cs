@@ -15,6 +15,7 @@ namespace InventoryManagement.Domain.Models.Farma.Core
         public PagedList<UsuarioAdministrativo> PagedUsuarioAdministrativo { get; set; }
         public PagedList<FuncionarioTaquilla> PagedFuncionarioTaquilla { get; set; }
         public PagedList<EmpresaSede> PagedEmpresaSede { get; set; }
-        public PagedList<ProductManagerDto> PagedTasks { get; set; }
+        public PagedList<ProductManagerDto> PagedProduct { get; set; }
+        public PagedList<CategoryManagementDto> PagedCategory { get; set; }
     }
 }

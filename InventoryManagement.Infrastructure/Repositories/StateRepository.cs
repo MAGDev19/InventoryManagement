@@ -31,7 +31,7 @@ namespace InventoryManagement.Infrastructure.Repositories
             var prms = new DynamicParameters();
             prms.Add("@NameState", state.NameState);
 
-            var response = Execute<int>("sp_CreateState", prms) == 1 ? true : false;
+            var response = Execute<int>("sp_PostState", prms) == 1 ? true : false;
             return response;
         }
 

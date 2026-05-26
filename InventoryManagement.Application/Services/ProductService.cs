@@ -22,18 +22,18 @@ namespace InventoryManagement.Application.Services
                 WrapExecuteTrans<ResultOperation<GenericoResponse>, ProductRepository>((repo, uow) =>
                 {
                     var rst = new ResultOperation<GenericoResponse>();
-                    var TaskList = new List<ProductManagerDto>();
+                    var ProductList = new List<ProductManagerDto>();
 
                     try
                     {
-                        TaskList = repo.GetListProduct();
-                        if (TaskList.Count == 0)
+                        ProductList = repo.GetListProduct();
+                        if (ProductList.Count == 0)
                         {
                             rst.MessageResult = "No hay datos";
                         }
 
-                        var response = PagedList<ProductManagerDto>.Create(TaskList, entity.PageNumber, 100000);
-                        rst.Result = new GenericoResponse { PagedTasks = response };
+                        var response = PagedList<ProductManagerDto>.Create(ProductList, entity.PageNumber, 100000);
+                        rst.Result = new GenericoResponse { PagedProduct = response };
                         rst.stateOperation = true;
                     }
                     catch (Exception err)

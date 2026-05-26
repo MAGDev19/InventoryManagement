@@ -69,7 +69,6 @@ namespace InventoryManagement.Infrastructure.Repositories
         {
             var prms = new DynamicParameters();
             prms.Add("IdProduct", productId);
-            var responseDos = Execute<int>("Sp_DeleteProduct", prms);
             var response = Execute<int>("Sp_DeleteProduct", prms) == -1 ? true : false;
             return response;
         }
