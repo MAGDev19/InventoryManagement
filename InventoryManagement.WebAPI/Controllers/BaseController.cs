@@ -24,6 +24,7 @@ namespace InventoryManagement.WebAPI.Controllers
         protected readonly IProductService _ProductService;
         protected readonly ICategoryService _CategoryService;
         protected readonly IStateService _StateService;
+        protected readonly IInventoryReportService _InventoryReportService;
 
         public BaseController(IServiceProvider serviceProvider, IOptions<SectionConfiguration> configuration)
         {
@@ -35,6 +36,7 @@ namespace InventoryManagement.WebAPI.Controllers
             _ProductService = serviceProvider.GetService(typeof(IProductService)) as IProductService;
             _CategoryService = serviceProvider.GetService(typeof(ICategoryService)) as ICategoryService;
             _StateService = serviceProvider.GetService(typeof(IStateService)) as IStateService;
+            _InventoryReportService = serviceProvider.GetService(typeof(IInventoryReportService)) as IInventoryReportService;
         }
 
         #region Validaciones

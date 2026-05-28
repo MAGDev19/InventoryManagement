@@ -52,13 +52,15 @@ namespace InventoryManagement.WebAPI.Controllers
         {
             var result = _ProductService.PostProduct(product);
 
-            if (!result.stateOperation)
-                return StatusCode(500, result);
-
             if (!result.Result)
-                return BadRequest(result);
+                return BadRequest(new{StateOperation = false, Message = result.MessageResult});
 
-            return Ok(new { StateOperation = true, Result = true, Message = "Producto creado correctamente" });
+            return Ok(new
+            {
+                StateOperation = true,
+                Result = true,
+                Message = result.MessageResult
+            });
         }
 
         [HttpPut("UpdateProduct")]
@@ -66,13 +68,15 @@ namespace InventoryManagement.WebAPI.Controllers
         {
             var result = _ProductService.UpdateProduct(product);
 
-            if (!result.stateOperation)
-                return StatusCode(500, result);
-
             if (!result.Result)
-                return BadRequest(result);
+                return BadRequest(new{StateOperation = false,Message = result.MessageResult});
 
-            return Ok(result);
+            return Ok(new
+            {
+                StateOperation = true,
+                Result = true,
+                Message = result.MessageResult
+            });
         }
 
         [HttpDelete("DeleteProduct/{id}")]

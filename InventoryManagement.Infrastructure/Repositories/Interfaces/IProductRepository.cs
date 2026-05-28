@@ -9,5 +9,7 @@ namespace InventoryManagement.Infrastructure.Repositories.Interfaces
         bool PostProduct(ProductManagerDto product);
         bool UpdateProduct(ProductManagerDto product);
         bool DeleteProduct(int ProductId);
+        bool ExistSKU(string sku);
+        bool ExistSKUUpdate(int idProduct, string sku);
     }
 }

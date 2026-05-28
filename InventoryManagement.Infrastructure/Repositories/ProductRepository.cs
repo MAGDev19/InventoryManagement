@@ -69,8 +69,31 @@ namespace InventoryManagement.Infrastructure.Repositories
         {
             var prms = new DynamicParameters();
             prms.Add("IdProduct", productId);
+
             var response = Execute<int>("Sp_DeleteProduct", prms) == -1 ? true : false;
+
             return response;
+        }
+
+        public bool ExistSKU(string sku)
+        {
+            var prms = new DynamicParameters();
+            prms.Add("@SKU", sku);
+
+            var response = GetDataListOfProcedure<ProductManagerDto>("Sp_ExistSKU",prms);
+
+            return response.Any();
+        }
+
+        public bool ExistSKUUpdate(int idProduct, string sku)
+        {
+            var prms = new DynamicParameters();
+            prms.Add("@IdProduct", idProduct);
+            prms.Add("@SKU", sku);
+
+            var response = GetDataListOfProcedure<ProductManagerDto>("Sp_ExistSKUUpdate",prms);
+
+            return response.Any();
         }
     }
 }

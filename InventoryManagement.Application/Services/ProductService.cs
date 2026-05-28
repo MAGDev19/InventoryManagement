@@ -3,159 +3,230 @@ using InventoryManagement.Domain.Entities.CustomEntities;
 using InventoryManagement.Domain.Models;
 using InventoryManagement.Domain.Models.Dto;
 using InventoryManagement.Domain.Models.Farma.Core;
-using InventoryManagement.Infrastructure.Repositories;
-using Microsoft.Extensions.Options;
+using InventoryManagement.Infrastructure.Repositories.Interfaces;
+using InventoryManagement.Infrastructure.Repositories._UnitOfWork;
 using Models.Dto;
 
 namespace InventoryManagement.Application.Services
 {
-    public class ProductService : _Service, IProductService
+    public class ProductService : IProductService
     {
-        public ProductService(IOptions<ConnectionStrings> connectionStrings) : base(connectionStrings.Value.ConnetionGenerico)
-        {
+        private readonly IProductRepository _productRepository;
+        private readonly IUnitOfWork _unitOfWork;
 
+        public ProductService(
+            IProductRepository productRepository,
+            IUnitOfWork unitOfWork)
+        {
+            _productRepository = productRepository;
+            _unitOfWork = unitOfWork;
         }
 
         public ResultOperation<GenericoResponse> GetListProduct(QueryFilter entity)
         {
-            var result =
-                WrapExecuteTrans<ResultOperation<GenericoResponse>, ProductRepository>((repo, uow) =>
+            var rst = new ResultOperation<GenericoResponse>();
+
+            try
+            {
+                var productList = _productRepository.GetListProduct();
+
+                if (productList.Count == 0)
                 {
-                    var rst = new ResultOperation<GenericoResponse>();
-                    var ProductList = new List<ProductManagerDto>();
+                    rst.MessageResult = "No hay datos";
+                }
 
-                    try
-                    {
-                        ProductList = repo.GetListProduct();
-                        if (ProductList.Count == 0)
-                        {
-                            rst.MessageResult = "No hay datos";
-                        }
+                var response = PagedList<ProductManagerDto>.Create(
+                    productList,
+                    entity.PageNumber,
+                    100000);
 
-                        var response = PagedList<ProductManagerDto>.Create(ProductList, entity.PageNumber, 100000);
-                        rst.Result = new GenericoResponse { PagedProduct = response };
-                        rst.stateOperation = true;
-                    }
-                    catch (Exception err)
-                    {
-                        rst.RollBack = true;
-                        rst.stateOperation = false;
-                        rst.MessageExceptionTechnical = err.Message + Environment.NewLine + err.StackTrace;
-                    }
+                rst.Result = new GenericoResponse
+                {
+                    PagedProduct = response
+                };
 
-                    return rst;
-                });
+                rst.stateOperation = true;
+            }
+            catch (Exception ex)
+            {
+                rst.RollBack = true;
+                rst.stateOperation = false;
+                rst.MessageExceptionTechnical =
+                    ex.Message + Environment.NewLine + ex.StackTrace;
+            }
 
-            return result;
+            return rst;
         }
 
         public ResultOperation<ProductManagerDto> GetProductById(int id)
         {
-            var result =
-                WrapExecuteTrans<ResultOperation<ProductManagerDto>, ProductRepository>((repo, uow) =>
+            var rst = new ResultOperation<ProductManagerDto>();
+
+            try
+            {
+                var product = _productRepository.GetProductById(id);
+
+                if (product == null)
                 {
-                    var rst = new ResultOperation<ProductManagerDto>();
-
-                    try
-                    {
-                        var task = repo.GetProductById(id);
-
-                        if (task == null)
-                        {
-                            rst.stateOperation = true;
-                            rst.MessageResult = "No existen productos registrados";
-                            return rst;
-                        }
-
-                        rst.Result = task;
-                        rst.stateOperation = true;
-                    }
-                    catch (Exception err)
-                    {
-                        rst.RollBack = true;
-                        rst.stateOperation = false;
-                        rst.MessageExceptionTechnical = err.Message + Environment.NewLine + err.StackTrace;
-                    }
-
+                    rst.stateOperation = true;
+                    rst.MessageResult = "No existen productos registrados";
                     return rst;
-                });
+                }
 
-            return result;
+                rst.Result = product;
+                rst.stateOperation = true;
+            }
+            catch (Exception ex)
+            {
+                rst.RollBack = true;
+                rst.stateOperation = false;
+                rst.MessageExceptionTechnical =
+                    ex.Message + Environment.NewLine + ex.StackTrace;
+            }
+
+            return rst;
         }
-
 
         public ResultOperation<bool> PostProduct(ProductManagerDto product)
         {
-            var result =
-                WrapExecuteTrans<ResultOperation<bool>, ProductRepository>((repo, uow) =>
+            var rst = new ResultOperation<bool>();
+
+            try
+            {
+                if (product.Stock < 0)
                 {
-                    var rst = new ResultOperation<bool>();
-
-                    try
-                    {
-                        rst.Result = repo.PostProduct(product);
-                        rst.stateOperation = true;
-                    }
-                    catch (Exception err)
-                    {
-                        rst.RollBack = true;
-                        rst.stateOperation = false;
-                        rst.MessageExceptionTechnical = err.Message + Environment.NewLine + err.StackTrace;
-                    }
-
+                    rst.Result = false;
+                    rst.stateOperation = false;
+                    rst.MessageResult = "El stock no puede ser negativo";
                     return rst;
-                });
+                }
 
-            return result;
+                if (_productRepository.ExistSKU(product.SKU))
+                {
+                    rst.Result = false;
+                    rst.stateOperation = false;
+                    rst.MessageResult = "El SKU ya existe";
+                    return rst;
+                }
+
+                _unitOfWork.Begin();
+
+                rst.Result = _productRepository.PostProduct(product);
+
+                if (rst.Result)
+                {
+                    _unitOfWork.Commit();
+
+                    rst.stateOperation = true;
+                    rst.MessageResult = "Producto creado correctamente";
+                }
+                else
+                {
+                    _unitOfWork.Rollback();
+
+                    rst.stateOperation = false;
+                    rst.MessageResult = "No fue posible crear el producto";
+                }
+            }
+            catch (Exception ex)
+            {
+                _unitOfWork.Rollback();
+
+                rst.RollBack = true;
+                rst.stateOperation = false;
+                rst.MessageExceptionTechnical =
+                    ex.Message + Environment.NewLine + ex.StackTrace;
+            }
+
+            return rst;
         }
 
         public ResultOperation<bool> UpdateProduct(ProductManagerDto product)
         {
-            var result = WrapExecuteTrans<ResultOperation<bool>, ProductRepository>((repo, uow) =>
+            var rst = new ResultOperation<bool>();
+
+            try
             {
-                var rst = new ResultOperation<bool>();
-
-                try
+                if (product.Stock < 0)
                 {
-                    rst.Result = repo.UpdateProduct(product);
-                    rst.stateOperation = true;
-                }
-                catch (Exception ex)
-                {
-                    rst.RollBack = true;
+                    rst.Result = false;
                     rst.stateOperation = false;
-                    rst.MessageExceptionTechnical = $"{ex.Message}{Environment.NewLine}{ex.StackTrace}";
+                    rst.MessageResult = "El stock no puede ser negativo";
+                    return rst;
                 }
 
-                return rst;
-            });
+                if (_productRepository.ExistSKUUpdate(product.IdProduct, product.SKU))
+                {
+                    rst.Result = false;
+                    rst.stateOperation = false;
+                    rst.MessageResult = "El SKU ya existe";
+                    return rst;
+                }
 
-            return result;
+                _unitOfWork.Begin();
+
+                rst.Result = _productRepository.UpdateProduct(product);
+
+                if (rst.Result)
+                {
+                    _unitOfWork.Commit();
+
+                    rst.stateOperation = true;
+                    rst.MessageResult = "Producto actualizado correctamente";
+                }
+                else
+                {
+                    _unitOfWork.Rollback();
+
+                    rst.stateOperation = false;
+                    rst.MessageResult = "No fue posible actualizar el producto";
+                }
+            }
+            catch (Exception ex)
+            {
+                _unitOfWork.Rollback();
+
+                rst.RollBack = true;
+                rst.stateOperation = false;
+                rst.MessageExceptionTechnical =
+                    ex.Message + Environment.NewLine + ex.StackTrace;
+            }
+
+            return rst;
         }
 
-        public ResultOperation<bool> DeleteProduct(int ProductId)
+        public ResultOperation<bool> DeleteProduct(int productId)
         {
-            var result =
-                WrapExecuteTrans<ResultOperation<bool>, ProductRepository>((repo, uow) =>
+            var rst = new ResultOperation<bool>();
+
+            try
+            {
+                _unitOfWork.Begin();
+
+                rst.Result = _productRepository.DeleteProduct(productId);
+
+                if (rst.Result)
                 {
-                    var rst = new ResultOperation<bool>();
+                    _unitOfWork.Commit();
+                    rst.stateOperation = true;
+                }
+                else
+                {
+                    _unitOfWork.Rollback();
+                    rst.stateOperation = false;
+                }
+            }
+            catch (Exception ex)
+            {
+                _unitOfWork.Rollback();
 
-                    try
-                    {
-                        rst.Result = repo.DeleteProduct(ProductId);
-                        rst.stateOperation = true;
-                    }
-                    catch (Exception err)
-                    {
-                        rst.RollBack = true;
-                        rst.stateOperation = false;
-                        rst.MessageExceptionTechnical = err.Message + Environment.NewLine + err.StackTrace;
-                    }
+                rst.RollBack = true;
+                rst.stateOperation = false;
+                rst.MessageExceptionTechnical =
+                    ex.Message + Environment.NewLine + ex.StackTrace;
+            }
 
-                    return rst;
-                });
-
-            return result;
+            return rst;
         }
     }
 }
